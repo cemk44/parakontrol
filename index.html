@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ParaKontrol">
 <meta name="theme-color" content="#0a0f1a">
-<title>ParaKontrol v3</title>
+<title>ParaKontrol v4</title>
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' fill='%2310b981'/%3E%3Ctext x='64' y='88' font-size='72' text-anchor='middle' fill='%23000'%3E₺%3C/text%3E%3C/svg%3E">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -40,7 +40,7 @@ input,select,button{font-family:inherit}
 .pb{background:var(--bg);border-radius:4px;height:6px;overflow:hidden}
 .pf{height:100%;border-radius:4px;transition:width .3s}
 .bt{border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-size:11px;font-weight:700}
-.ba{background:var(--ac);color:#000}.bw{background:var(--wn);color:#000}.bd{background:var(--dg);color:#fff}
+.ba{background:var(--ac);color:#000}.bw{background:var(--wn);color:#000}.bd2{background:var(--dg);color:#fff}
 .bf{width:100%;padding:10px;font-size:13px}.bs{padding:5px 10px;font-size:10px}
 .al{border-radius:7px;padding:8px 10px;display:flex;align-items:flex-start;gap:6px;margin-bottom:6px;font-size:11px;line-height:1.4}
 .ald{background:var(--dgd);border:1px solid var(--dg)}.alw{background:var(--wnd);border:1px solid var(--wn)}.ali{background:var(--ind);border:1px solid var(--in)}
@@ -75,6 +75,37 @@ input,select,button{font-family:inherit}
 .tg2{display:inline-block;padding:2px 6px;border-radius:4px;font-size:8px;font-weight:700;margin-left:4px}
 .ct2{padding:3px 7px;border-radius:5px;font-size:10px;font-weight:700;border:1px solid var(--bd);background:var(--bg);cursor:pointer}
 .ct2.on{border-color:var(--ac);background:var(--acd);color:var(--ac)}
+
+/* ── CHART STYLES ── */
+.chart-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.chart-svg{display:block}
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.chart-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--td)}
+.chart-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+/* ── AI COACH STYLES ── */
+.coach-card{background:linear-gradient(135deg,#0c1a2e,var(--cd));border:1px solid var(--in);border-radius:12px;padding:16px;margin-bottom:12px}
+.coach-section{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bd)}
+.coach-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.coach-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.coach-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:12px;line-height:1.5;color:var(--tx)}
+.coach-item:last-child{margin-bottom:0}
+.coach-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.score-ring{display:flex;flex-direction:column;align-items:center;gap:4px}
+.score-num{font-size:36px;font-weight:800;font-family:'Courier New',monospace}
+.score-label{font-size:9px;color:var(--td);text-transform:uppercase;letter-spacing:.5px}
+
+/* ── PLAN STYLES ── */
+.plan-row{display:grid;grid-template-columns:1fr 80px 80px 80px;gap:6px;padding:8px 0;border-bottom:1px solid var(--bd);align-items:center}
+.plan-row:last-child{border-bottom:none}
+.plan-hdr{display:grid;grid-template-columns:1fr 80px 80px 80px;gap:6px;padding:0 0 6px;border-bottom:1px solid var(--bd);margin-bottom:2px}
+.plan-hdr span{font-size:9px;color:var(--td);font-weight:600;text-transform:uppercase;letter-spacing:.4px;text-align:right}
+.plan-hdr span:first-child{text-align:left}
+.plan-cat{font-size:12px;font-weight:500}
+.plan-val{font-size:12px;font-weight:700;text-align:right;font-family:'Courier New',monospace}
+.plan-diff-pos{color:var(--ac)}
+.plan-diff-neg{color:var(--dg)}
+
 @media(min-width:600px){.ss{grid-template-columns:repeat(4,1fr)}.ct{padding:16px 20px 40px}.gs{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
@@ -85,7 +116,8 @@ input,select,button{font-family:inherit}
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script type="text/babel">
-const{useState,useEffect,useMemo,useRef}=React;
+const{useState,useEffect,useMemo,useRef,useCallback}=React;
+
 const CATS={inc:[{id:"salary",l:"Maaş",i:"💰"},{id:"freelance",l:"Serbest",i:"💻"},{id:"inv_inc",l:"Yatırım Geliri",i:"📈"},{id:"rental",l:"Kira",i:"🏠"},{id:"ppf_ret",l:"PPF Getirisi",i:"🏦"},{id:"other_inc",l:"Diğer",i:"💵"}],exp:[{id:"housing",l:"Konut/Kira",i:"🏠"},{id:"food",l:"Gıda/Market",i:"🛒"},{id:"transport",l:"Ulaşım",i:"🚗"},{id:"bills",l:"Faturalar",i:"📄"},{id:"health",l:"Sağlık",i:"🏥"},{id:"education",l:"Eğitim",i:"📚"},{id:"entertainment",l:"Eğlence",i:"🎬"},{id:"clothing",l:"Giyim",i:"👔"},{id:"personal",l:"Kişisel",i:"✨"},{id:"subs",l:"Abonelikler",i:"📱"},{id:"travel",l:"Seyahat",i:"✈️"},{id:"home_deco",l:"Ev/Dekor",i:"🛋️"},{id:"insurance",l:"Sigorta",i:"🛡️"},{id:"other_exp",l:"Diğer",i:"📦"}]};
 const INV=[{id:"bist",l:"BIST Hisse",i:"🇹🇷",c:"TRY"},{id:"nasdaq",l:"Nasdaq/US",i:"🇺🇸",c:"USD"},{id:"eu_stock",l:"Avrupa Hisse",i:"🇪🇺",c:"EUR"},{id:"gold_gr",l:"Gram Altın",i:"🥇",c:"TRY"},{id:"gold_quarter",l:"Çeyrek Altın",i:"🪙",c:"TRY"},{id:"gold_half",l:"Yarım Altın",i:"🪙",c:"TRY"},{id:"gold_full",l:"Tam Altın",i:"🪙",c:"TRY"},{id:"gold_ata",l:"Ata Altın",i:"🏅",c:"TRY"},{id:"gold_cumh",l:"Cumhuriyet Altını",i:"🏅",c:"TRY"},{id:"gold_oz",l:"Altın (ons)",i:"🥇",c:"USD"},{id:"silver_gr",l:"Gümüş (gr)",i:"🥈",c:"TRY"},{id:"silver_oz",l:"Gümüş (ons)",i:"🥈",c:"USD"},{id:"oil",l:"Petrol",i:"🛢️",c:"USD"},{id:"crypto",l:"Kripto",i:"₿",c:"USD"},{id:"fund_tr",l:"TR Fon",i:"🏦",c:"TRY"},{id:"fund_us",l:"US ETF",i:"📊",c:"USD"},{id:"bond",l:"Tahvil",i:"📜",c:"TRY"},{id:"deposit",l:"V. Mevduat",i:"🔒",c:"TRY"},{id:"eurobond",l:"Eurobond",i:"🌐",c:"USD"},{id:"realestate",l:"Gayrimenkul",i:"🏗️",c:"TRY"}];
 const CUR=[{id:"TRY",s:"₺"},{id:"USD",s:"$"},{id:"EUR",s:"€"},{id:"GBP",s:"£"}];
@@ -102,7 +134,7 @@ const td=()=>new Date().toISOString().split("T")[0];
 const ls=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch{return null}};
 const ptn=s=>parseFloat((s||"").replace(/\./g,"").replace(",","."))||0;
 
-function autoCat(d){const dl=d.toLowerCase();for(const[c,ks]of Object.entries(AK)){if(ks.some(k=>dl.includes(k)))return c}if(dl.includes("amazon")||dl.includes("hepsiburada"))return"other_exp";return"other_exp"}
+function autoCat(d){const dl=d.toLowerCase();for(const[c,ks]of Object.entries(AK)){if(ks.some(k=>dl.includes(k)))return c}return"other_exp"}
 
 async function parsePDF(file){
   const buf=await file.arrayBuffer();
@@ -119,6 +151,76 @@ async function parsePDF(file){
     txs.push({id:uid(),date:`${m[3]}-${MM[m[2].toLowerCase()]}-${m[1].padStart(2,"0")}`,desc:desc.replace(/\s+/g," ").substring(0,55),amount:amt,isCredit:cr,category:autoCat(desc),type:cr?"income":"expense",source:"ekstre"});
   }
   return{txs,sm}
+}
+
+// ── SVG CHARTS ──
+function BarChart({data,width=340,height=160}){
+  if(!data||!data.length)return null;
+  const pad={t:10,r:8,b:28,l:52};
+  const W=width-pad.l-pad.r,H=height-pad.t-pad.b;
+  const maxV=Math.max(...data.flatMap(d=>[d.inc||0,d.exp||0]),1);
+  const bW=Math.floor(W/data.length);
+  const bGap=Math.max(2,Math.floor(bW*0.12));
+  const bW2=Math.floor((bW-bGap*3)/2);
+  const yTicks=4;
+  return(
+    <svg viewBox={`0 0 ${width} ${height}`} className="chart-svg" style={{width:"100%",maxWidth:width}}>
+      {/* Y axis gridlines + labels */}
+      {Array.from({length:yTicks+1},(_,i)=>{
+        const v=maxV*(1-i/yTicks);
+        const y=pad.t+H*(i/yTicks);
+        return<g key={i}>
+          <line x1={pad.l} y1={y} x2={pad.l+W} y2={y} stroke="#1e2a3a" strokeWidth="1"/>
+          <text x={pad.l-4} y={y+4} textAnchor="end" fontSize="8" fill="#475569">{v>=1000?Math.round(v/1000)+"k":Math.round(v)}</text>
+        </g>
+      })}
+      {/* Bars */}
+      {data.map((d,i)=>{
+        const x=pad.l+i*bW;
+        const iH=Math.max(2,((d.inc||0)/maxV)*H);
+        const eH=Math.max(2,((d.exp||0)/maxV)*H);
+        return<g key={i}>
+          <rect x={x+bGap} y={pad.t+H-iH} width={bW2} height={iH} fill="#10b981" rx="2"/>
+          <rect x={x+bGap+bW2+bGap} y={pad.t+H-eH} width={bW2} height={eH} fill="#ef4444" rx="2"/>
+          <text x={x+bW/2} y={height-6} textAnchor="middle" fontSize="8" fill="#64748b">{d.label}</text>
+        </g>
+      })}
+      {/* X axis line */}
+      <line x1={pad.l} y1={pad.t+H} x2={pad.l+W} y2={pad.t+H} stroke="#1e2a3a" strokeWidth="1"/>
+    </svg>
+  );
+}
+
+function DonutChart({data,size=140}){
+  if(!data||!data.length)return null;
+  const r=52,cx=size/2,cy=size/2,stroke=20;
+  const total=data.reduce((s,d)=>s+d.v,0);
+  if(total===0)return null;
+  let offset=0;
+  const segments=data.map((d,i)=>{
+    const pct=d.v/total;
+    const dash=pct*2*Math.PI*r;
+    const gap=(1-pct)*2*Math.PI*r;
+    const seg={...d,dash,gap,offset:offset*2*Math.PI*r/(total)};
+    // actually use stroke-dashoffset properly
+    const startAngle=offset/total*2*Math.PI-Math.PI/2;
+    const endAngle=(offset+d.v)/total*2*Math.PI-Math.PI/2;
+    const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);
+    const large=pct>0.5?1:0;
+    seg.path=`M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    seg.color=PC[i%PC.length];
+    offset+=d.v;
+    return seg;
+  });
+  return(
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
+      {segments.map((s,i)=>(
+        <path key={i} d={s.path} fill="none" stroke={s.color} strokeWidth={stroke} strokeLinecap="butt"/>
+      ))}
+      <circle cx={cx} cy={cy} r={r-stroke/2} fill="#111827"/>
+    </svg>
+  );
 }
 
 function Mod({show,onClose,title,children}){if(!show)return null;return<div className="mo" onClick={onClose}><div className="ml" onClick={e=>e.stopPropagation()}><h3>{title}<button onClick={onClose}>✕</button></h3>{children}</div></div>}
@@ -139,13 +241,17 @@ function App(){
   const[recExp,setRecExp]=useState(()=>ls("p3_re")||[]);
   const[recLog,setRecLog]=useState(()=>ls("p3_rl")||{});
   const[apiKey,setApiKey]=useState(()=>ls("p3_ak")||"");
+  // NEW: planned expenses & AI coach
+  const[plans,setPlans]=useState(()=>ls("p4_pl")||[]);
+  const[coachResult,setCoachResult]=useState(()=>ls("p4_cr")||null);
+  const[coachLoading,setCoachLoading]=useState(false);
   const[mod,setMod]=useState(null);
   const[tf,setTf]=useState({type:"expense",cat:"food",amt:"",desc:"",date:td(),cur:"TRY"});
   const[cf,setCf]=useState({cid:"c1",amt:"",desc:"",cat:"food",date:td()});
   const[pa,setPa]=useState("");const[pn,setPn]=useState("");
   const[ce,setCe]=useState({});const[cei,setCei]=useState(null);
   const[ivf,setIvf]=useState({type:"bist",name:"",amt:"",bp:"",cp:"",date:td(),md:"",ir:""});
-  const[gf,setGf]=useState({name:"",tgt:"",cur:"",dl:"",cur:"TRY"});
+  const[gf,setGf]=useState({name:"",tgt:"",cur:"",dl:"",cur2:"TRY"});
   const[bf,setBf2]=useState({});
   const[prf,setPrf]=useState("");
   const[rf,setRf]=useState({title:"",date:"",amt:"",note:"",repeat:"none"});
@@ -156,11 +262,29 @@ function App(){
   const[parsing,setParsing]=useState(false);const[pr,setPr]=useState(null);
   const[rcpt,setRcpt]=useState(null);const[rcptLoading,setRcptLoading]=useState(false);const[rcptImg,setRcptImg]=useState(null);
   const[priceLoading,setPriceLoading]=useState(false);const[priceResults,setPriceResults]=useState(null);
+  // plan form
+  const[plf,setPlf]=useState({cat:"housing",desc:"",amt:"",month:new Date().getMonth(),year:new Date().getFullYear()});
   const fRef=useRef();const rcptRef=useRef();
 
-  useEffect(()=>{ls("p3_tx",txs)},[txs]);useEffect(()=>{ls("p3_bg",bgt)},[bgt]);useEffect(()=>{ls("p3_iv",inv)},[inv]);useEffect(()=>{ls("p3_gl",gls)},[gls]);useEffect(()=>{ls("p3_cd",cds)},[cds]);useEffect(()=>{ls("p3_ct",ctx)},[ctx]);useEffect(()=>{ls("p3_pf",ppf)},[ppf]);useEffect(()=>{ls("p3_rm",rem)},[rem]);useEffect(()=>{ls("p3_rt",rates)},[rates]);useEffect(()=>{ls("p3_es",extSums)},[extSums]);useEffect(()=>{ls("p3_re",recExp)},[recExp]);useEffect(()=>{ls("p3_rl",recLog)},[recLog]);useEffect(()=>{ls("p3_ak",apiKey)},[apiKey]);
+  useEffect(()=>{ls("p3_tx",txs)},[txs]);
+  useEffect(()=>{ls("p3_bg",bgt)},[bgt]);
+  useEffect(()=>{ls("p3_iv",inv)},[inv]);
+  useEffect(()=>{ls("p3_gl",gls)},[gls]);
+  useEffect(()=>{ls("p3_cd",cds)},[cds]);
+  useEffect(()=>{ls("p3_ct",ctx)},[ctx]);
+  useEffect(()=>{ls("p3_pf",ppf)},[ppf]);
+  useEffect(()=>{ls("p3_rm",rem)},[rem]);
+  useEffect(()=>{ls("p3_rt",rates)},[rates]);
+  useEffect(()=>{ls("p3_es",extSums)},[extSums]);
+  useEffect(()=>{ls("p3_re",recExp)},[recExp]);
+  useEffect(()=>{ls("p3_rl",recLog)},[recLog]);
+  useEffect(()=>{ls("p3_ak",apiKey)},[apiKey]);
+  useEffect(()=>{ls("p4_pl",plans)},[plans]);
+  useEffect(()=>{ls("p4_cr",coachResult)},[coachResult]);
 
-  // ─── AUTO-GENERATE RECURRING EXPENSES ───
+  const now=new Date(),cM=now.getMonth(),cY=now.getFullYear();
+
+  // ── RECURRING AUTO-GENERATE ──
   useEffect(()=>{
     if(!recExp.length)return;
     const key=`${cY}-${String(cM+1).padStart(2,"0")}`;
@@ -170,9 +294,9 @@ function App(){
     const newTxs=toAdd.map(r=>({id:uid(),type:"expense",category:r.cat,amount:r.amt,desc:`🔄 ${r.name}`,date:`${cY}-${String(cM+1).padStart(2,"0")}-${String(r.day).padStart(2,"0")}`,source:"recurring"}));
     setTxs(p=>[...newTxs,...p]);
     setRecLog(p=>({...p,[key]:[...(p[key]||[]),...toAdd.map(r=>r.id)]}));
-  },[recExp,cM,cY]);
+  },[recExp]);
 
-  // ─── AUTO-GENERATE RECURRING REMINDERS ───
+  // ── RECURRING REMINDERS ──
   const allReminders=useMemo(()=>{
     const single=rem.filter(r=>!r.repeat||r.repeat==="none");
     const recurring=rem.filter(r=>r.repeat&&r.repeat!=="none");
@@ -190,7 +314,6 @@ function App(){
     return[...single.map(r=>({...r,dl:Math.ceil((new Date(r.date)-now)/864e5)})),...generated].filter(r=>r.dl>=-1&&r.dl<=30).sort((a,b)=>a.dl-b.dl);
   },[rem]);
 
-  const now=new Date(),cM=now.getMonth(),cY=now.getFullYear();
   const mTx=useMemo(()=>txs.filter(t=>{const d=new Date(t.date);return d.getMonth()===cM&&d.getFullYear()===cY}),[txs,cM,cY]);
   const mI=useMemo(()=>mTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0),[mTx]);
   const mE=useMemo(()=>mTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0),[mTx]);
@@ -204,11 +327,43 @@ function App(){
   const tPL=tIV-tIC;
   const eCat=useMemo(()=>{const m={};mTx.filter(t=>t.type==="expense").forEach(t=>{const c=CATS.exp.find(x=>x.id===t.category);m[c?.l||"Diğer"]=(m[c?.l||"Diğer"]||0)+t.amount});return Object.entries(m).map(([n,v])=>({n,v})).sort((a,b)=>b.v-a.v)},[mTx]);
   const mxE=Math.max(...eCat.map(e=>e.v),1);
+
+  // ── 6-MONTH TREND DATA ──
+  const trendData=useMemo(()=>{
+    const result=[];
+    for(let i=5;i>=0;i--){
+      let m=cM-i,y=cY;
+      if(m<0){m+=12;y--;}
+      const mts=txs.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y});
+      const inc=mts.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+      const exp=mts.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+      result.push({label:MF[m].substring(0,3),inc,exp,month:m,year:y});
+    }
+    return result;
+  },[txs,cM,cY]);
+
+  // ── PLAN vs ACTUAL for current month ──
+  const planComparison=useMemo(()=>{
+    const cPlans=plans.filter(p=>p.month===cM&&p.year===cY);
+    const result=[];
+    const catSet=new Set([...cPlans.map(p=>p.cat),...CATS.exp.filter(c=>bgt[c.id]).map(c=>c.id)]);
+    catSet.forEach(catId=>{
+      const cat=CATS.exp.find(c=>c.id===catId);
+      if(!cat)return;
+      const planned=cPlans.filter(p=>p.cat===catId).reduce((s,p)=>s+p.amt,0);
+      const budget=bgt[catId]||0;
+      const actual=mTx.filter(t=>t.type==="expense"&&t.category===catId).reduce((s,t)=>s+t.amount,0);
+      if(planned>0||budget>0||actual>0)result.push({catId,cat,planned,budget,actual});
+    });
+    return result.sort((a,b)=>b.actual-a.actual);
+  },[plans,bgt,mTx,cM,cY]);
+
   const alerts=useMemo(()=>{const a=[];
     CATS.exp.forEach(cat=>{const lm=bgt[cat.id];if(!lm)return;const sp=mTx.filter(t=>t.type==="expense"&&t.category===cat.id).reduce((s,t)=>s+t.amount,0);const p=sp/lm*100;if(p>=100)a.push({t:"d",m:`${cat.i} ${cat.l} aşıldı! ${fmt(sp)}/${fmt(lm)}`});else if(p>=80)a.push({t:"w",m:`${cat.i} ${cat.l} %${Math.round(p)}`})});
     cds.forEach(c=>{const sp=cSp[c.id]||0;let dl=c.dd-now.getDate();if(dl<0)dl+=30;if(sp>0&&dl<=5&&dl>=0)a.push({t:"w",m:`💳 ${c.n}: ${dl}g kaldı. ${fmt(sp)}`})});
     inv.filter(i=>i.type==="deposit"&&i.md).forEach(i=>{const dl=Math.ceil((new Date(i.md)-now)/864e5);if(dl<=7&&dl>=0)a.push({t:"w",m:`🔒 ${i.name} vade: ${dl}g`})});
     return a},[bgt,mTx,cds,cSp,inv]);
+
   const upco=useMemo(()=>cds.filter(c=>cSp[c.id]>0).map(c=>{let d=c.dd-now.getDate();if(d<0)d+=30;return{...c,sp:cSp[c.id],dl:d}}).sort((a,b)=>a.dl-b.dl),[cds,cSp]);
   const extPay=useMemo(()=>extSums.filter(e=>!e.paid&&e.dueDate).map(e=>{const dl=Math.ceil((new Date(e.dueDate)-now)/864e5);return{...e,dl}}).filter(e=>e.dl>=-3).sort((a,b)=>a.dl-b.dl),[extSums]);
   const gC=(type,id)=>{const l=type==="income"?CATS.inc:CATS.exp;const c=l.find(x=>x.id===id);return c?`${c.i} ${c.l}`:id};
@@ -216,7 +371,68 @@ function App(){
   const rEC=useMemo(()=>{const m={};rTx.filter(t=>t.type==="expense").forEach(t=>{const c=CATS.exp.find(x=>x.id===t.category);m[c?`${c.i} ${c.l}`:"Diğer"]=(m[c?`${c.i} ${c.l}`:"Diğer"]||0)+t.amount});return Object.entries(m).map(([n,v])=>({n,v})).sort((a,b)=>b.v-a.v)},[rTx]);
   const rMx=Math.max(...rEC.map(e=>e.v),1);
   const ivDist=useMemo(()=>{const m={};inv.forEach(i=>{const t=INV.find(x=>x.id===i.type);m[t?.l||"?"]=(m[t?.l||"?"]||0)+toT(i.amt*i.cp,t?.c||"TRY")});return Object.entries(m).map(([n,v])=>({n,v})).sort((a,b)=>b.v-a.v)},[inv,rates]);
+  const donutData=useMemo(()=>eCat.slice(0,6).map((e,i)=>({n:e.n,v:e.v,c:PC[i%PC.length]})),[eCat]);
 
+  // ── AI COACH ──
+  const runCoach=async()=>{
+    if(!apiKey){alert("Ayarlar sekmesinden API anahtarı girin.");return;}
+    setCoachLoading(true);setCoachResult(null);
+    // Build financial snapshot
+    const snap={
+      month:MF[cM]+" "+cY,
+      income:mI,
+      expense:mE,
+      net:mI-mE,
+      savings_rate:mI>0?Math.round((mI-mE)/mI*100):0,
+      ppf_balance:ppf.bal,
+      ppf_rate:ppf.rate,
+      portfolio_value:tIV,
+      portfolio_cost:tIC,
+      portfolio_pnl:tPL,
+      portfolio_pnl_pct:tIC>0?((tPL/tIC)*100).toFixed(1):0,
+      expense_by_cat:eCat,
+      budget_limits:Object.entries(bgt).map(([k,v])=>{const c=CATS.exp.find(x=>x.id===k);const sp=mTx.filter(t=>t.type==="expense"&&t.category===k).reduce((s,t)=>s+t.amount,0);return{cat:c?.l||k,limit:v,spent:sp,pct:Math.round(sp/v*100)}}),
+      investments:inv.map(i=>{const t=INV.find(x=>x.id===i.type);return{name:i.name,type:t?.l,value:i.amt*i.cp,cost:i.amt*i.bp,currency:t?.c||"TRY"}}),
+      trend:trendData.map(d=>({month:d.label,income:d.inc,expense:d.exp,net:d.inc-d.exp})),
+      planned:planComparison.map(p=>({cat:p.cat.l,planned:p.planned,actual:p.actual,diff:p.actual-p.planned})),
+      goals:gls.map(g=>({name:g.name,target:g.tgt,current:g.cur,pct:Math.round(g.cur/g.tgt*100)})),
+      reminders:allReminders.slice(0,5).map(r=>({title:r.title,days:r.dl,amount:r.amt})),
+    };
+    try{
+      const resp=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:2000,
+          system:`Sen kişisel finans koçusun. Kullanıcının finansal verilerini analiz edip Türkçe, somut, uygulanabilir öneriler ver. Veriyi derinlemesine analiz et. Jenerik tavsiyeler verme, kişinin gerçek rakamlarına dayanan önerileri öne çıkar. Yanıtını SADECE JSON formatında ver:
+{
+  "score": 0-100 arası finansal sağlık skoru,
+  "score_comment": "skoru tek cümleyle açıkla",
+  "strengths": ["güçlü yön 1", "güçlü yön 2"],
+  "risks": ["risk/sorun 1", "risk/sorun 2"],
+  "spending_insight": "harcama alışkanlıkları hakkında somut 1-2 cümle gözlem",
+  "savings_action": "bu ay yapılabilecek 1 somut tasarruf hamlesi",
+  "investment_insight": "portföy dengesi veya yatırım önerisi 1-2 cümle",
+  "next_month_forecast": "gelecek ay için nakit akışı tahmini ve öneri",
+  "top_actions": ["bu hafta yapılabilecek eylem 1", "eylem 2", "eylem 3"]
+}`,
+          messages:[{role:"user",content:`Finansal verilerim:\n${JSON.stringify(snap,null,2)}`}]
+        })
+      });
+      if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||`HTTP ${resp.status}`)}
+      const data=await resp.json();
+      const text=data.content?.map(c=>c.text||"").join("")||"";
+      const clean=text.replace(/```json|```/g,"").trim();
+      const parsed=JSON.parse(clean);
+      setCoachResult({...parsed,ts:new Date().toLocaleString("tr-TR")});
+    }catch(err){
+      setCoachResult({error:err.message,ts:new Date().toLocaleString("tr-TR")});
+    }
+    setCoachLoading(false);
+  };
+
+  // ── ACTIONS ──
   const addTx=()=>{const a=parseFloat(tf.amt);if(!a)return;const aT=tf.cur==="TRY"?a:a*(rates[tf.cur]||1);setTxs(p=>[{id:uid(),type:tf.type,category:tf.cat,amount:aT,desc:tf.desc,date:tf.date,oCur:tf.cur,oAmt:a},...p]);setTf({type:"expense",cat:"food",amt:"",desc:"",date:td(),cur:"TRY"});setMod(null)};
   const addCt=()=>{const a=parseFloat(cf.amt);if(!a)return;setCtx(p=>[{id:uid(),...cf,amount:a},...p]);setTxs(p=>[{id:uid(),type:"expense",category:cf.cat,amount:a,desc:`💳 ${cds.find(c=>c.id===cf.cid)?.n||""} ${cf.desc}`,date:cf.date},...p]);setCf({cid:"c1",amt:"",desc:"",cat:"food",date:td()});setMod(null)};
   const pDep=()=>{const a=parseFloat(pa);if(!a)return;setPpf(p=>({...p,bal:p.bal+a,mv:[{id:uid(),t:"d",a,n:pn||"Yatırma",d:td()},...p.mv]}));setPa("");setPn("");setMod(null)};
@@ -227,102 +443,65 @@ function App(){
   const saveCd=()=>{setCds(p=>p.map(c=>c.id===cei?{...c,...ce}:c));setMod(null)};
   const addRm=()=>{if(!rf.title||!rf.date)return;setRem(p=>[{id:uid(),...rf,amt:parseFloat(rf.amt)||0},...p]);setRf({title:"",date:"",amt:"",note:"",repeat:"none"});setMod(null)};
   const addRecE=()=>{if(!recF.name||!recF.amt)return;setRecExp(p=>[{id:uid(),name:recF.name,amt:parseFloat(recF.amt),cat:recF.cat,day:parseInt(recF.day)||1,active:true},...p]);setRecF({name:"",amt:"",cat:"housing",day:"1"});setMod(null)};
+  const addPlan=()=>{const a=parseFloat(plf.amt);if(!a)return;setPlans(p=>[{id:uid(),cat:plf.cat,desc:plf.desc,amt:a,month:parseInt(plf.month),year:parseInt(plf.year)},...p]);setPlf({cat:"housing",desc:"",amt:"",month:cM,year:cY});setMod(null)};
+
   const handleFile=async(e)=>{const f=e.target.files?.[0];if(!f)return;setParsing(true);setPr(null);try{setPr(await parsePDF(f))}catch(er){setPr({error:er.message,txs:[]})}setParsing(false)};
   const impTx=()=>{if(!pr?.txs?.length)return;const nt=pr.txs.filter(t=>!t.isCredit);setTxs(p=>[...nt,...p]);setCtx(p=>[...nt.map(t=>({id:uid(),cid:"c1",amount:t.amount,desc:t.desc,cat:t.category,date:t.date})),...p]);
-    // Save ekstre summary for dashboard
-    if(pr.sm){
-      let dueDate="";
-      if(pr.sm.due){
-        const dp=pr.sm.due.match(/(\d+)\s+(\w+)\s+(\d{4})/);
-        if(dp){const mo=MM[dp[2].toLowerCase()];if(mo)dueDate=`${dp[3]}-${mo}-${dp[1].padStart(2,"0")}`}
-      }
-      setExtSums(prev=>{const filtered=prev.filter(e=>e.dueDate!==dueDate);return[{id:uid(),total:pr.sm.total,dueDate,dueLabel:pr.sm.due,cardName:"Kart 1",importDate:td(),paid:false},...filtered]});
-    }
-    setPr(r=>({...r,imp:true}))
-  };
+    if(pr.sm){let dueDate="";if(pr.sm.due){const dp=pr.sm.due.match(/(\d+)\s+(\w+)\s+(\d{4})/);if(dp){const mo=MM[dp[2].toLowerCase()];if(mo)dueDate=`${dp[3]}-${mo}-${dp[1].padStart(2,"0")}`}}setExtSums(prev=>{const filtered=prev.filter(e=>e.dueDate!==dueDate);return[{id:uid(),total:pr.sm.total,dueDate,dueLabel:pr.sm.due,cardName:"Kart 1",importDate:td(),paid:false},...filtered]});}
+    setPr(r=>({...r,imp:true}))};
 
-  // ─── RECEIPT SCANNER ───
   const handleReceipt=async(e)=>{
     const file=e.target.files?.[0];if(!file)return;
     setRcptLoading(true);setRcpt(null);setRcptImg(null);
-    if(!apiKey){setRcpt({error:"API anahtarı gerekli. Ayarlar sekmesinden Anthropic API anahtarınızı girin."});setRcptLoading(false);return}
+    if(!apiKey){setRcpt({error:"API anahtarı gerekli."});setRcptLoading(false);return}
     const reader=new FileReader();
     reader.onload=async(ev)=>{
-      const base64=ev.target.result.split(",")[1];
-      const mediaType=file.type||"image/jpeg";
-      setRcptImg(ev.target.result);
+      const base64=ev.target.result.split(",")[1];const mediaType=file.type||"image/jpeg";setRcptImg(ev.target.result);
       try{
-        const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64}},{type:"text",text:`Bu bir fiş/fatura fotoğrafı. Lütfen aşağıdaki bilgileri JSON formatında çıkar. Sadece JSON döndür, başka bir şey yazma.
-{"merchant":"işyeri adı","amount":toplam tutar sayı olarak,"date":"YYYY-MM-DD","items":["ürün1","ürün2"],"category":"şu kategorilerden biri: food,transport,bills,health,education,entertainment,clothing,personal,subs,travel,home_deco,insurance,housing,other_exp","payment_method":"tahmin: card veya cash - fiş üzerinde kredi kartı, kart, visa, mastercard, pos gibi ifadeler varsa card, nakit/cash yazıyorsa cash, belirsizse unknown"}
-Tarih yoksa bugünün tarihini kullan: ${td()}`}]}]})});
+        const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64}},{type:"text",text:`Bu bir fiş/fatura fotoğrafı. JSON formatında çıkar. Sadece JSON döndür.\n{"merchant":"işyeri adı","amount":toplam tutar sayı olarak,"date":"YYYY-MM-DD","items":["ürün1","ürün2"],"category":"şu kategorilerden biri: food,transport,bills,health,education,entertainment,clothing,personal,subs,travel,home_deco,insurance,housing,other_exp","payment_method":"card veya cash veya unknown"}\nTarih yoksa bugünün tarihini kullan: ${td()}`}]}]})});
         if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||`HTTP ${resp.status}`)}
-        const data=await resp.json();
-        const text=data.content?.map(c=>c.text||"").join("")||"";
-        const clean=text.replace(/```json|```/g,"").trim();
-        const parsed=JSON.parse(clean);
-        setRcpt(parsed);
+        const data=await resp.json();const text=data.content?.map(c=>c.text||"").join("")||"";const clean=text.replace(/```json|```/g,"").trim();setRcpt(JSON.parse(clean));
       }catch(err){setRcpt({error:"Fiş okunamadı: "+err.message})}
       setRcptLoading(false);
-    };
-    reader.readAsDataURL(file);
+    };reader.readAsDataURL(file);
   };
+  const saveReceipt=(asCash)=>{if(!rcpt||rcpt.error)return;if(!asCash)return setMod(null);setTxs(p=>[{id:uid(),type:"expense",category:rcpt.category||"other_exp",amount:rcpt.amount,desc:`🧾 ${rcpt.merchant||"Fiş"}`,date:rcpt.date||td(),source:"receipt"},...p]);setRcpt(null);setRcptImg(null);setMod(null)};
 
-  const saveReceipt=(asCash)=>{
-    if(!rcpt||rcpt.error)return;
-    if(!asCash)return setMod(null); // Card payment - don't save, will be in statement
-    setTxs(p=>[{id:uid(),type:"expense",category:rcpt.category||"other_exp",amount:rcpt.amount,desc:`🧾 ${rcpt.merchant||"Fiş"}`,date:rcpt.date||td(),source:"receipt"},...p]);
-    setRcpt(null);setRcptImg(null);setMod(null);
-  };
-
-  // ─── PRICE FETCHER ───
   const fetchPrices=async()=>{
-    if(inv.length===0)return;
-    if(!apiKey){setPriceResults([{error:"API anahtarı gerekli. Ayarlar sekmesinden girin."}]);return}
+    if(inv.length===0)return;if(!apiKey){setPriceResults([{error:"API anahtarı gerekli."}]);return}
     setPriceLoading(true);setPriceResults(null);
     const items=inv.map(i=>{const t=INV.find(x=>x.id===i.type);return{id:i.id,name:i.name,type:t?.l||i.type,cur:t?.c||"TRY"}});
     const query=items.map(i=>`${i.name} (${i.type}, ${i.cur})`).join(", ");
     try{
-      const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:`Şu yatırım araçlarının güncel fiyatlarını bul ve SADECE JSON olarak döndür, başka hiçbir şey yazma: ${query}
-
-JSON formatı:
-[{"name":"hisse/emtia adı","price":güncel fiyat sayı olarak,"currency":"TRY veya USD veya EUR"}]
-
-Önemli: Fiyatları mutlaka web'den ara, en güncel fiyatları bul. Borsa hisseleri için son kapanış veya anlık fiyat, emtialar için güncel spot fiyat kullan.`}]})});
+      const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:`Şu yatırım araçlarının güncel fiyatlarını bul ve SADECE JSON döndür: ${query}\n[{"name":"ad","price":fiyat,"currency":"TRY/USD/EUR"}]`}]})});
       if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||`HTTP ${resp.status}`)}
-      const data=await resp.json();
-      const text=data.content?.filter(c=>c.type==="text").map(c=>c.text).join("")||"";
-      const clean=text.replace(/```json|```/g,"").trim();
-      // Try to find JSON array in response
-      const jsonMatch=clean.match(/\[[\s\S]*\]/);
-      if(jsonMatch){
-        const prices=JSON.parse(jsonMatch[0]);
-        const results=[];
-        prices.forEach(p=>{
-          const match=inv.find(i=>i.name.toLowerCase()===p.name?.toLowerCase()||i.name.toLowerCase().includes(p.name?.toLowerCase())||p.name?.toLowerCase().includes(i.name?.toLowerCase()));
-          if(match&&p.price){
-            results.push({id:match.id,name:match.name,oldPrice:match.cp,newPrice:p.price,cur:p.currency||"TRY"});
-          }
-        });
-        setPriceResults(results);
-      }else{setPriceResults([]);} 
+      const data=await resp.json();const text=data.content?.filter(c=>c.type==="text").map(c=>c.text).join("")||"";const clean=text.replace(/```json|```/g,"").trim();const jsonMatch=clean.match(/\[[\s\S]*\]/);
+      if(jsonMatch){const prices=JSON.parse(jsonMatch[0]);const results=[];prices.forEach(p=>{const match=inv.find(i=>i.name.toLowerCase()===p.name?.toLowerCase()||i.name.toLowerCase().includes(p.name?.toLowerCase())||p.name?.toLowerCase().includes(i.name?.toLowerCase()));if(match&&p.price)results.push({id:match.id,name:match.name,oldPrice:match.cp,newPrice:p.price,cur:p.currency||"TRY"})});setPriceResults(results);}else{setPriceResults([]);}
     }catch(err){setPriceResults([{error:err.message}])}
     setPriceLoading(false);
   };
+  const applyPrices=()=>{if(!priceResults?.length)return;setInv(p=>p.map(i=>{const pr2=priceResults.find(r=>r.id===i.id);return pr2?{...i,cp:pr2.newPrice}:i}));setPriceResults(r=>r.map(x=>({...x,applied:true})));};
 
-  const applyPrices=()=>{
-    if(!priceResults?.length)return;
-    setInv(p=>p.map(i=>{const pr2=priceResults.find(r=>r.id===i.id);return pr2?{...i,cp:pr2.newPrice}:i}));
-    setPriceResults(r=>r.map(x=>({...x,applied:true})));
-  };
+  const scoreColor=(s)=>s>=75?"var(--ac)":s>=50?"var(--wn)":"var(--dg)";
+
   return(<div>
-    <div className="hd"><div style={{display:"flex",alignItems:"center",gap:8}}><div style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,var(--ac),var(--cy))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,color:"#000"}}>₺</div><div><div style={{fontSize:15,fontWeight:800}}>ParaKontrol</div><div style={{fontSize:8,color:"var(--td)"}}>v3 · Finans</div></div></div><div style={{textAlign:"right"}}><div style={{fontSize:8,color:"var(--td)"}}>PPF</div><div className="m" style={{fontSize:14,color:"var(--ac)"}}>{fmt(ppf.bal)}</div></div></div>
+    {/* HEADER */}
+    <div className="hd">
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <div style={{width:32,height:32,borderRadius:8,background:"linear-gradient(135deg,var(--ac),var(--cy))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,color:"#000"}}>₺</div>
+        <div><div style={{fontSize:15,fontWeight:800}}>ParaKontrol</div><div style={{fontSize:8,color:"var(--td)"}}>v4 · Finans</div></div>
+      </div>
+      <div style={{textAlign:"right"}}><div style={{fontSize:8,color:"var(--td)"}}>PPF</div><div className="m" style={{fontSize:14,color:"var(--ac)"}}>{fmt(ppf.bal)}</div></div>
+    </div>
 
+    {/* NAV */}
     <div className="nv">
-      {[["dash","📊","Panel",alerts.filter(a=>a.t==="d").length],["ppf","🏦","PPF",0],["fis","🧾","Fiş",0],["ext","📄","Ekstre",0],["tx","💳","İşlem",0],["bg","🎯","Bütçe",0],["iv","📈","Yatırım",0],["gl","🏆","Hedef",0],["rm","🔔","Hatırlat",allReminders.length],["rp","📋","Rapor",0],["set","⚙️","Ayar",apiKey?0:1],["tp","🎓","Bilgi",0]].map(([id,ic,lb,bd])=><button key={id} className={`nb ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{ic} {lb}{bd>0&&<span className="bg">{bd}</span>}</button>)}
+      {[["dash","📊","Panel",alerts.filter(a=>a.t==="d").length],["ppf","🏦","PPF",0],["fis","🧾","Fiş",0],["ext","📄","Ekstre",0],["tx","💳","İşlem",0],["bg","🎯","Bütçe",0],["plan","📋","Plan",0],["iv","📈","Yatırım",0],["gl","🏆","Hedef",0],["rm","🔔","Hatırlat",allReminders.length],["coach","🤖","Koç",coachResult&&!coachResult.error?1:0],["rp","📊","Rapor",0],["set","⚙️","Ayar",apiKey?0:1],["tp","🎓","Bilgi",0]].map(([id,ic,lb,bd])=><button key={id} className={`nb ${tab===id?"on":""}`} onClick={()=>setTab(id)}>{ic} {lb}{bd>0&&<span className="bg">{bd}</span>}</button>)}
     </div>
 
     <div className="ct">
-      {/* DASH */}
+
+      {/* ── DASHBOARD ── */}
       {tab==="dash"&&<div>
         {alerts.map((a,i)=><div key={i} className={`al ${a.t==="d"?"ald":"alw"}`}>{a.t==="d"?"🚨":"⚠️"} {a.m}</div>)}
         {allReminders.filter(r=>r.dl<=3).map((r,i)=><div key={i} className="rem"><div className="dy" style={{background:r.dl<=0?"var(--dg)":"var(--wn)"}}>{r.dl<0?"!":r.dl}<small>gün</small></div><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{r.title}</div><div style={{fontSize:9,color:"var(--td)"}}>{r.amt>0&&fmt(r.amt)+" · "}{new Date(r.date).toLocaleDateString("tr-TR")}</div></div></div>)}
@@ -332,35 +511,74 @@ JSON formatı:
           <div className="s"><label>PPF</label><div className="v m" style={{color:"var(--cy)"}}>{fmt(ppf.bal)}</div><div className="sb">+{fmt(dR)}/g</div></div>
           <div className="s"><label>Kart Borcu</label><div className="v m" style={{color:"var(--wn)"}}>{fmt(extPay.length>0?extPay.reduce((s,e)=>s+e.total,0):tCS)}</div>{extPay.length>0&&<div className="sb" style={{color:extPay[0]?.dl<=3?"var(--dg)":"var(--td)"}}>{extPay[0]?.dl}g kaldı</div>}</div>
         </div>
-        {eCat.length>0&&<div className="c"><h3>Gider Dağılımı</h3>{eCat.slice(0,6).map((e,i)=><div key={i} className="br"><div className="bl">{e.n}</div><div className="bk"><div style={{height:"100%",borderRadius:3,width:`${e.v/mxE*100}%`,background:PC[i%PC.length]}}/></div><div className="bv m">{fmt(e.v)}</div></div>)}</div>}
-        <div className="c"><div className="ch"><h3>📅 Yaklaşan Ödemeler</h3><button className="bt bw bs" onClick={()=>setMod("ct")}>+ Kart</button></div>
-          {/* Ekstre-based payments */}
+
+        {/* 6-Month Trend Chart */}
+        <div className="c">
+          <div className="ch"><h3>📈 6 Aylık Trend</h3></div>
+          <div className="chart-wrap">
+            <BarChart data={trendData}/>
+          </div>
+          <div className="chart-legend">
+            <div className="chart-legend-item"><div className="chart-legend-dot" style={{background:"#10b981"}}/> Gelir</div>
+            <div className="chart-legend-item"><div className="chart-legend-dot" style={{background:"#ef4444"}}/> Gider</div>
+          </div>
+          {trendData.length>0&&(()=>{
+            const last=trendData[trendData.length-1];
+            const prev=trendData[trendData.length-2];
+            if(!prev||prev.exp===0)return null;
+            const diff=last.exp-prev.exp;const pct=Math.round(diff/prev.exp*100);
+            return<div style={{marginTop:8,fontSize:10,color:diff<0?"var(--ac)":"var(--dg)"}}>
+              {diff<0?"📉":"📈"} Gider geçen aya göre {diff<0?`%${Math.abs(pct)} azaldı`:`%${pct} arttı`}
+            </div>;
+          })()}
+        </div>
+
+        {/* Donut + category */}
+        {eCat.length>0&&<div className="c">
+          <h3>Gider Dağılımı</h3>
+          <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+            <DonutChart data={donutData}/>
+            <div style={{flex:1,minWidth:140}}>
+              {eCat.slice(0,6).map((e,i)=><div key={i} className="br">
+                <div className="bl">{e.n}</div>
+                <div className="bk"><div style={{height:"100%",borderRadius:3,width:`${e.v/mxE*100}%`,background:PC[i%PC.length]}}/></div>
+                <div className="bv m">{fmt(e.v)}</div>
+              </div>)}
+            </div>
+          </div>
+        </div>}
+
+        {/* AI Coach teaser */}
+        {coachResult&&!coachResult.error&&<div className="coach-card" style={{cursor:"pointer"}} onClick={()=>setTab("coach")}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontSize:11,color:"var(--td)"}}>🤖 AI Finansal Skor</div><div className="m" style={{fontSize:28,color:scoreColor(coachResult.score)}}>{coachResult.score}</div><div style={{fontSize:10,color:"var(--td)"}}>{coachResult.score_comment}</div></div>
+            <div style={{textAlign:"right"}}><div style={{fontSize:10,color:"var(--in)",marginBottom:4}}>Detay →</div><div style={{fontSize:9,color:"var(--td)"}}>{coachResult.ts}</div></div>
+          </div>
+        </div>}
+
+        {/* Upcoming payments */}
+        <div className="c">
+          <div className="ch"><h3>📅 Yaklaşan Ödemeler</h3><button className="bt bw bs" onClick={()=>setMod("ct")}>+ Kart</button></div>
           {extPay.map(e=><div key={e.id} style={{background:e.dl<=3?"linear-gradient(135deg,var(--dgd),#1a0000)":"linear-gradient(135deg,var(--wnd),#1a1500)",border:`1px solid ${e.dl<=3?"var(--dg)":"var(--wn)"}`,borderRadius:10,padding:12,marginBottom:8,display:"flex",alignItems:"center",gap:10}}>
             <div style={{background:e.dl<=0?"var(--dg)":e.dl<=3?"var(--wn)":"var(--in)",color:e.dl<=3?"#000":"#fff",borderRadius:8,padding:"8px 6px",minWidth:44,textAlign:"center"}}><div style={{fontSize:18,fontWeight:800,lineHeight:1}}>{e.dl<0?"!":e.dl}</div><div style={{fontSize:7,fontWeight:600}}>gün</div></div>
-            <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700}}>💳 Ekstre Borcu{e.cardName?` · ${e.cardName}`:""}</div>
-              <div style={{fontSize:10,color:"var(--td)",marginTop:2}}>Son ödeme: {e.dueLabel||new Date(e.dueDate).toLocaleDateString("tr-TR")}</div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div className="m" style={{fontSize:18,color:e.dl<=3?"var(--dg)":"var(--wn)"}}>{fmt(e.total)}</div>
-              <button className="db" style={{fontSize:10,color:"var(--ac)"}} onClick={()=>setExtSums(p=>p.map(x=>x.id===e.id?{...x,paid:true}:x))}>✅ Ödendi</button>
-            </div>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700}}>💳 Ekstre Borcu{e.cardName?` · ${e.cardName}`:""}</div><div style={{fontSize:10,color:"var(--td)",marginTop:2}}>Son ödeme: {e.dueLabel||new Date(e.dueDate).toLocaleDateString("tr-TR")}</div></div>
+            <div style={{textAlign:"right"}}><div className="m" style={{fontSize:18,color:e.dl<=3?"var(--dg)":"var(--wn)"}}>{fmt(e.total)}</div><button className="db" style={{fontSize:10,color:"var(--ac)"}} onClick={()=>setExtSums(p=>p.map(x=>x.id===e.id?{...x,paid:true}:x))}>✅ Ödendi</button></div>
           </div>)}
-          {/* Manual card spending */}
-          {upco.filter(c=>!extPay.some(e=>e.total>0)).length>0&&upco.map(c=><div key={c.id} className="r"><div className="rl"><div style={{width:6,height:6,borderRadius:3,background:c.cl}}/><div><div className="rn">{c.n}</div><div className="rm">{c.o==="eş"?"👩":"👤"} · {c.dd}.</div></div></div><div style={{textAlign:"right"}}><div className="ra m" style={{color:"var(--wn)"}}>{fmt(c.sp)}</div><div style={{fontSize:9,color:c.dl<=3?"var(--dg)":"var(--td)"}}>{c.dl}g</div></div></div>)}
-          {extPay.length===0&&upco.length===0&&<div className="em">Borç yok · Ekstre yükleyerek veya manuel giriş yaparak başlayın</div>}
+          {upco.filter(c=>!extPay.some(e=>e.total>0)).map(c=><div key={c.id} className="r"><div className="rl"><div style={{width:6,height:6,borderRadius:3,background:c.cl}}/><div><div className="rn">{c.n}</div><div className="rm">{c.o==="eş"?"👩":"👤"} · {c.dd}.</div></div></div><div style={{textAlign:"right"}}><div className="ra m" style={{color:"var(--wn)"}}>{fmt(c.sp)}</div><div style={{fontSize:9,color:c.dl<=3?"var(--dg)":"var(--td)"}}>{c.dl}g</div></div></div>)}
+          {extPay.length===0&&upco.length===0&&<div className="em">Borç yok</div>}
         </div>
+
         <div className="c"><div className="ch"><h3>Son İşlemler</h3><button className="bt ba bs" onClick={()=>setMod("tx")}>+ İşlem</button></div>
           {txs.slice(0,5).map(t=><div key={t.id} className="r"><div className="rl"><div className="ri" style={{background:t.type==="income"?"var(--acd)":"var(--dgd)"}}>{gC(t.type,t.category).split(" ")[0]}</div><div><div className="rn">{t.desc||gC(t.type,t.category)}</div><div className="rm">{new Date(t.date).toLocaleDateString("tr-TR")}{t.source==="ekstre"&&<span className="tg2" style={{background:"var(--ind)",color:"var(--in)"}}>ekstre</span>}</div></div></div><div className="ra m" style={{color:t.type==="income"?"var(--ac)":"var(--dg)"}}>{t.type==="income"?"+":"-"}{fmt(t.amount)}</div></div>)}
         </div>
       </div>}
 
-      {/* PPF */}
+      {/* ── PPF ── */}
       {tab==="ppf"&&<div>
         <div style={{background:"linear-gradient(135deg,#0c2a2a,var(--cd))",borderRadius:10,padding:16,border:"1px solid var(--bd)",marginBottom:14}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
             <div><div style={{fontSize:10,color:"var(--td)"}}>🏦 PPF</div><div className="m" style={{fontSize:26,color:"var(--ac)"}}>{fmt(ppf.bal)}</div><div style={{fontSize:11,color:"var(--td)"}}>%{ppf.rate} <span style={{color:"var(--wn)",cursor:"pointer",textDecoration:"underline"}} onClick={()=>{setPrf(ppf.rate+"");setMod("pr")}}>değiştir</span></div></div>
-            <div style={{display:"flex",gap:4}}><button className="bt ba bs" onClick={()=>{setPa("");setPn("");setMod("pd")}}>+Yatır</button><button className="bt bd bs" onClick={()=>{setPa("");setPn("");setMod("pw")}}>-Çek</button></div>
+            <div style={{display:"flex",gap:4}}><button className="bt ba bs" onClick={()=>{setPa("");setPn("");setMod("pd")}}>+Yatır</button><button className="bt bd2 bs" onClick={()=>{setPa("");setPn("");setMod("pw")}}>-Çek</button></div>
           </div>
           <div className="gs">{[{l:"Günlük",v:"+"+fmt(dR),c:"var(--ac)"},{l:"Aylık",v:"+"+fmt(mR),c:"var(--cy)"},{l:"Yıllık",v:"+"+fmt(yR),c:"var(--in)"}].map((x,i)=><div key={i} className="it"><label>{x.l}</label><div className="v m" style={{color:x.c,fontSize:13}}>{x.v}</div></div>)}</div>
           <div style={{marginTop:10}}>{ppf.mv.slice(0,5).map(m=><div key={m.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:"1px solid var(--bd)"}}><div style={{display:"flex",gap:6}}><span style={{fontSize:11}}>{m.t==="d"?"⬆️":"⬇️"}</span><div><div style={{fontSize:11}}>{m.n}</div><div style={{fontSize:8,color:"var(--td)"}}>{new Date(m.d).toLocaleDateString("tr-TR")}</div></div></div><div className="m" style={{fontSize:12,color:m.t==="d"?"var(--ac)":"var(--dg)"}}>{m.t==="d"?"+":"-"}{fmt(m.a)}</div></div>)}</div>
@@ -373,69 +591,37 @@ JSON formatı:
           </div>})}
       </div>}
 
-      {/* FİŞ TARAMA */}
+      {/* ── FİŞ ── */}
       {tab==="fis"&&<div>
         <div className="sc">🧾 Fiş / Fatura Tara</div>
-        {!apiKey&&<div className="alw al" style={{marginBottom:12}}>⚠️ Fiş tarama için API anahtarı gerekli. <span style={{textDecoration:"underline",cursor:"pointer"}} onClick={()=>setTab("set")}>Ayarlar</span>'dan girin.</div>}
-        <div className="ali al" style={{marginBottom:12}}>🔒 Fotoğraf Anthropic API'ye gönderilip analiz edilir.</div>
-
+        {!apiKey&&<div className="alw al" style={{marginBottom:12}}>⚠️ <span style={{textDecoration:"underline",cursor:"pointer"}} onClick={()=>setTab("set")}>Ayarlar</span>'dan API anahtarı girin.</div>}
         <div className="uz" onClick={()=>rcptRef.current?.click()}>
           <input ref={rcptRef} type="file" accept="image/*" capture="environment" onChange={handleReceipt}/>
-          <div style={{fontSize:32,marginBottom:6}}>📸</div>
-          <div style={{fontSize:14,fontWeight:600}}>Fiş Fotoğrafı Çek veya Yükle</div>
+          <div style={{fontSize:32,marginBottom:6}}>📸</div><div style={{fontSize:14,fontWeight:600}}>Fiş Fotoğrafı Çek veya Yükle</div>
           <div style={{fontSize:10,color:"var(--td)",marginTop:4}}>Kamera veya galeriden seçin</div>
         </div>
-
-        {rcptLoading&&<div style={{textAlign:"center",padding:20}}><div style={{color:"var(--ac)",fontSize:14}}>🔍 Fiş analiz ediliyor...</div><div style={{fontSize:10,color:"var(--td)",marginTop:4}}>Yapay zeka işyeri, tutar ve tarihi okuyor</div></div>}
-
+        {rcptLoading&&<div style={{textAlign:"center",padding:20,color:"var(--ac)",fontSize:14}}>🔍 Analiz ediliyor...</div>}
         {rcptImg&&!rcptLoading&&<div style={{marginTop:12,textAlign:"center"}}><img src={rcptImg} style={{maxWidth:"100%",maxHeight:200,borderRadius:10,border:"1px solid var(--bd)"}}/></div>}
-
         {rcpt&&!rcpt.error&&<div className="ps" style={{marginTop:14}}>
           <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>✅ Fiş Okundu</div>
           <div className="c" style={{background:"var(--bg)",marginBottom:10}}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,fontWeight:600}}>{rcpt.merchant||"Bilinmeyen İşyeri"}</span><span className="m" style={{fontSize:16,color:"var(--wn)"}}>{fmt(rcpt.amount||0)}</span></div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontSize:12,fontWeight:600}}>{rcpt.merchant||"Bilinmeyen"}</span><span className="m" style={{fontSize:16,color:"var(--wn)"}}>{fmt(rcpt.amount||0)}</span></div>
             <div style={{fontSize:10,color:"var(--td)"}}>{rcpt.date&&new Date(rcpt.date).toLocaleDateString("tr-TR")}</div>
-            {rcpt.items?.length>0&&<div style={{fontSize:10,color:"var(--td)",marginTop:4}}>{rcpt.items.slice(0,3).join(", ")}{rcpt.items.length>3&&"..."}</div>}
-            <div style={{marginTop:6}}><span className="tg2" style={{background:"var(--acd)",color:"var(--ac)"}}>{CATS.exp.find(c=>c.id===rcpt.category)?.l||rcpt.category}</span>
-            {rcpt.payment_method&&<span className="tg2" style={{background:rcpt.payment_method==="card"?"var(--wnd)":"var(--ind)",color:rcpt.payment_method==="card"?"var(--wn)":"var(--in)",marginLeft:4}}>{rcpt.payment_method==="card"?"💳 Kart":"💵 Nakit"}</span>}
-            </div>
+            {rcpt.items?.length>0&&<div style={{fontSize:10,color:"var(--td)",marginTop:4}}>{rcpt.items.slice(0,3).join(", ")}</div>}
           </div>
-
-          <div style={{fontSize:12,fontWeight:600,marginBottom:8}}>Bu harcama nasıl ödendi?</div>
           <div style={{display:"flex",gap:8,marginBottom:8}}>
-            <button className="bt ba" style={{flex:1,padding:12}} onClick={()=>saveReceipt(true)}>
-              <div style={{fontSize:16}}>💵</div>
-              <div style={{fontSize:12,marginTop:2}}>Hesaptan / Nakit</div>
-              <div style={{fontSize:9,opacity:.7}}>Gider olarak kaydet</div>
-            </button>
-            <button className="bt" style={{flex:1,padding:12,background:"var(--cd)",border:"1px solid var(--bd)",color:"var(--tx)"}} onClick={()=>saveReceipt(false)}>
-              <div style={{fontSize:16}}>💳</div>
-              <div style={{fontSize:12,marginTop:2}}>Kredi Kartı</div>
-              <div style={{fontSize:9,color:"var(--td)"}}>Ekstrede gelecek, kaydetme</div>
-            </button>
+            <button className="bt ba" style={{flex:1,padding:12}} onClick={()=>saveReceipt(true)}><div style={{fontSize:16}}>💵</div><div style={{fontSize:12,marginTop:2}}>Hesap/Nakit</div></button>
+            <button className="bt" style={{flex:1,padding:12,background:"var(--cd)",border:"1px solid var(--bd)",color:"var(--tx)"}} onClick={()=>saveReceipt(false)}><div style={{fontSize:16}}>💳</div><div style={{fontSize:12,marginTop:2}}>Kredi Kartı</div></button>
           </div>
-          <div style={{fontSize:9,color:"var(--td)",textAlign:"center"}}>Kredi kartı ile ödendiyse bir sonraki ekstrede otomatik gelecektir.</div>
         </div>}
-
         {rcpt?.error&&<div className="ald al" style={{marginTop:12}}>❌ {rcpt.error}</div>}
-
-        <div className="c" style={{marginTop:16}}>
-          <h3>ℹ️ Nasıl Çalışır?</h3>
-          <div style={{fontSize:11,color:"var(--td)",lineHeight:1.7}}>
-            1. Fişin fotoğrafını çekin veya galeriden seçin<br/>
-            2. AI işyeri adı, tutar, tarih ve kategoriyi okur<br/>
-            3. Ödeme yöntemini seçin:<br/>
-            &nbsp;&nbsp;• <b style={{color:"var(--ac)"}}>Hesap/Nakit</b> → Gider olarak kaydedilir<br/>
-            &nbsp;&nbsp;• <b style={{color:"var(--td)"}}>Kredi Kartı</b> → Kaydetmez (ekstre'de gelecek)
-          </div>
-        </div>
       </div>}
 
-      {/* EKSTRE */}
+      {/* ── EKSTRE ── */}
       {tab==="ext"&&<div>
         <div className="sc">📄 Ekstre Yükle</div>
-        <div className="ali al" style={{marginBottom:12}}>🔒 Dosya tamamen tarayıcında işlenir, sunucuya gitmez.</div>
-        <div className="uz" onClick={()=>fRef.current?.click()}><input ref={fRef} type="file" accept=".pdf" onChange={handleFile}/><div style={{fontSize:28,marginBottom:6}}>📄</div><div style={{fontSize:13,fontWeight:600}}>Garanti BBVA PDF</div><div style={{fontSize:10,color:"var(--td)",marginTop:4}}>Tıklayın · Shop&Fly desteklenir</div></div>
+        <div className="ali al" style={{marginBottom:12}}>🔒 Tarayıcıda işlenir, sunucuya gitmez.</div>
+        <div className="uz" onClick={()=>fRef.current?.click()}><input ref={fRef} type="file" accept=".pdf" onChange={handleFile}/><div style={{fontSize:28,marginBottom:6}}>📄</div><div style={{fontSize:13,fontWeight:600}}>Garanti BBVA PDF</div></div>
         {parsing&&<div style={{textAlign:"center",padding:16,color:"var(--ac)"}}>⏳ Analiz ediliyor...</div>}
         {pr&&!pr.error&&<div className="ps">
           <div style={{fontSize:13,fontWeight:700,marginBottom:6}}>✅ {pr.txs.filter(t=>!t.isCredit).length} harcama bulundu</div>
@@ -447,7 +633,7 @@ JSON formatı:
         {pr?.error&&<div className="ald al" style={{marginTop:12}}>❌ {pr.error}</div>}
       </div>}
 
-      {/* TX */}
+      {/* ── İŞLEMLER ── */}
       {tab==="tx"&&<div>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:4}}>
           <div style={{display:"flex",gap:3}}>{["all","income","expense"].map(f=><button key={f} className="bt bs" style={{background:txFil===f?"var(--ac)":"var(--cd)",color:txFil===f?"#000":"var(--td)",border:"1px solid var(--bd)"}} onClick={()=>setTxFil(f)}>{f==="all"?"Tümü":f==="income"?"Gelir":"Gider"}</button>)}</div>
@@ -456,7 +642,7 @@ JSON formatı:
         <div className="c" style={{padding:0}}>{(()=>{const l=txFil==="all"?txs:txs.filter(t=>t.type===txFil);return l.length===0?<div className="em">Yok</div>:l.slice(0,40).map(t=><div key={t.id} className="r" style={{padding:"8px 10px"}}><div className="rl"><div className="ri" style={{background:t.type==="income"?"var(--acd)":"var(--dgd)"}}>{gC(t.type,t.category).split(" ")[0]}</div><div><div className="rn">{t.desc||gC(t.type,t.category)}</div><div className="rm">{new Date(t.date).toLocaleDateString("tr-TR")}{t.source==="ekstre"&&<span className="tg2" style={{background:"var(--ind)",color:"var(--in)"}}>ekstre</span>}{t.oCur&&t.oCur!=="TRY"&&<span className="tg2" style={{background:"var(--prd)",color:"var(--pr)"}}>{t.oCur}</span>}</div></div></div><div style={{display:"flex",alignItems:"center",gap:4}}><div className="ra m" style={{color:t.type==="income"?"var(--ac)":"var(--dg)"}}>{t.type==="income"?"+":"-"}{fmt(t.amount)}</div><button className="db" onClick={()=>setTxs(p=>p.filter(x=>x.id!==t.id))}>🗑</button></div></div>)})()}</div>
       </div>}
 
-      {/* BUDGET */}
+      {/* ── BÜTÇE ── */}
       {tab==="bg"&&<div>
         <div className="ch"><div className="sc">Bütçe</div><button className="bt ba bs" onClick={()=>{setBf2({...bgt});setMod("bg")}}>✏️</button></div>
         {CATS.exp.map(cat=>{const lm=bgt[cat.id]||0;const sp=mTx.filter(t=>t.type==="expense"&&t.category===cat.id).reduce((s,t)=>s+t.amount,0);const p=lm>0?Math.min(100,sp/lm*100):0;
@@ -466,32 +652,89 @@ JSON formatı:
           </div>})}
       </div>}
 
-      {/* INVESTMENTS */}
+      {/* ── PLAN ── */}
+      {tab==="plan"&&<div>
+        <div className="ch"><div className="sc">📋 Planlama</div><button className="bt ba bs" onClick={()=>setMod("plan")}>+ Plan Ekle</button></div>
+
+        <div className="ali al" style={{marginBottom:12,fontSize:10}}>
+          💡 Bu ay için planlanan harcamaları girin. Bütçe limiti, planlanan ve gerçekleşen karşılaştırmasını göreceksiniz.
+        </div>
+
+        {/* Plan vs Actual vs Budget table */}
+        {planComparison.length>0?<div className="c">
+          <div className="plan-hdr">
+            <span>Kategori</span>
+            <span>Bütçe</span>
+            <span>Plan</span>
+            <span>Gerçek</span>
+          </div>
+          {planComparison.map((p,i)=>{
+            const diff=p.actual-(p.planned||p.budget);
+            return<div key={i} className="plan-row">
+              <div className="plan-cat">{p.cat.i} {p.cat.l}</div>
+              <div className="plan-val" style={{color:"var(--td)"}}>{p.budget>0?fmt(p.budget):"—"}</div>
+              <div className="plan-val" style={{color:"var(--in)"}}>{p.planned>0?fmt(p.planned):"—"}</div>
+              <div>
+                <div className="plan-val" style={{color:p.actual>(p.planned||p.budget)&&(p.planned||p.budget)>0?"var(--dg)":"var(--tx)"}}>{fmt(p.actual)}</div>
+                {(p.planned||p.budget)>0&&<div style={{fontSize:8,textAlign:"right",color:diff>0?"var(--dg)":"var(--ac)"}}>{diff>0?"+":""}{fmt(diff)}</div>}
+              </div>
+            </div>
+          })}
+          <div style={{borderTop:"1px solid var(--bd)",marginTop:8,paddingTop:8,display:"flex",justifyContent:"space-between"}}>
+            <span style={{fontSize:11,color:"var(--td)"}}>Toplam</span>
+            <div style={{display:"flex",gap:16}}>
+              <span className="m" style={{fontSize:11,color:"var(--in)"}}>{fmt(planComparison.reduce((s,p)=>s+(p.planned||0),0))}</span>
+              <span className="m" style={{fontSize:11,color:"var(--dg)"}}>{fmt(planComparison.reduce((s,p)=>s+p.actual,0))}</span>
+            </div>
+          </div>
+        </div>:<div className="c em">Henüz bu ay için plan girilmedi.<br/>Bütçe veya plan ekleyerek başlayın.</div>}
+
+        {/* All plans list */}
+        <div className="ch" style={{marginTop:16}}><div style={{fontSize:13,fontWeight:700}}>Kayıtlı Planlar</div></div>
+        {plans.length===0?<div className="c em">Plan yok</div>:plans.map(p=>{
+          const cat=CATS.exp.find(c=>c.id===p.cat);
+          return<div key={p.id} className="r">
+            <div className="rl">
+              <div className="ri" style={{background:"var(--ind)"}}>{cat?.i||"📦"}</div>
+              <div><div className="rn">{p.desc||cat?.l||p.cat}</div><div className="rm">{MF[p.month]} {p.year}</div></div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div className="ra m" style={{color:"var(--in)"}}>{fmt(p.amt)}</div>
+              <button className="db" onClick={()=>setPlans(prev=>prev.filter(x=>x.id!==p.id))}>🗑</button>
+            </div>
+          </div>
+        })}
+      </div>}
+
+      {/* ── YATIRIM ── */}
       {tab==="iv"&&<div>
         <div style={{display:"flex",gap:3,marginBottom:10,flexWrap:"wrap"}}>
           <button className="bt bs" style={{background:"var(--cd)",color:"var(--td)",border:"1px solid var(--bd)"}} onClick={()=>{setRtf({...rates});setMod("rt")}}>💱 Kurlar</button>
           <button className="bt bs" style={{background:priceLoading?"var(--cd)":"var(--in)",color:"#fff",border:"none"}} onClick={fetchPrices} disabled={priceLoading||inv.length===0}>{priceLoading?"⏳ Aranıyor...":"🔄 Fiyatları Güncelle"}</button>
-          {!apiKey&&<span style={{fontSize:9,color:"var(--wn)",cursor:"pointer"}} onClick={()=>setTab("set")}>⚠️ API anahtarı gerekli</span>}
         </div>
-
         {priceResults&&priceResults.length>0&&!priceResults[0]?.error&&<div style={{background:"var(--ind)",border:"1px solid var(--in)",borderRadius:10,padding:14,marginBottom:14}}>
-          <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>📊 Güncel Fiyatlar Bulundu</div>
+          <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>📊 Güncel Fiyatlar</div>
           {priceResults.map((p,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid var(--bd)"}}>
             <div><div style={{fontSize:12,fontWeight:600}}>{p.name}</div><div style={{fontSize:9,color:"var(--td)"}}>Eski: {fmt(p.oldPrice,p.cur)}</div></div>
             <div style={{textAlign:"right"}}><div className="m" style={{fontSize:14,color:"var(--ac)"}}>{fmt(p.newPrice,p.cur)}</div><div style={{fontSize:9,color:p.newPrice>=p.oldPrice?"var(--ac)":"var(--dg)"}}>{p.newPrice>=p.oldPrice?"+":""}{((p.newPrice-p.oldPrice)/p.oldPrice*100).toFixed(1)}%</div></div>
           </div>)}
-          {!priceResults[0]?.applied?<button className="bt ba bf" style={{marginTop:10}} onClick={applyPrices}>✅ Fiyatları Uygula ({priceResults.length})</button>:<div style={{textAlign:"center",marginTop:10,color:"var(--ac)",fontWeight:700}}>✅ Uygulandı!</div>}
+          {!priceResults[0]?.applied?<button className="bt ba bf" style={{marginTop:10}} onClick={applyPrices}>✅ Fiyatları Uygula</button>:<div style={{textAlign:"center",marginTop:10,color:"var(--ac)",fontWeight:700}}>✅ Uygulandı!</div>}
         </div>}
-        {priceResults&&priceResults.length===0&&<div className="alw al" style={{marginBottom:12}}>Fiyat bulunamadı. Yatırım isimlerini kontrol edin.</div>}
-        {priceResults?.[0]?.error&&<div className="ald al" style={{marginBottom:12}}>❌ {priceResults[0].error}</div>}
-
         <div className="ss">
           <div className="s"><label>Maliyet</label><div className="v m" style={{color:"var(--in)",fontSize:14}}>{fmt(tIC)}</div></div>
           <div className="s"><label>Değer</label><div className="v m" style={{color:"var(--pr)",fontSize:14}}>{fmt(tIV)}</div></div>
           <div className="s"><label>K/Z</label><div className="v m" style={{color:tPL>=0?"var(--ac)":"var(--dg)",fontSize:14}}>{tPL>=0?"+":""}{fmt(tPL)}</div></div>
           <div className="s"><label>PPF+Portföy</label><div className="v m" style={{color:"var(--cy)",fontSize:14}}>{fmt(ppf.bal+tIV)}</div></div>
         </div>
-        {ivDist.length>0&&<div className="c"><h3>Dağılım</h3>{ivDist.map((e,i)=><div key={i} className="br"><div className="bl">{e.n}</div><div className="bk"><div style={{height:"100%",borderRadius:3,width:`${e.v/Math.max(...ivDist.map(x=>x.v))*100}%`,background:PC[i%PC.length]}}/></div><div className="bv m">{fmt(e.v)}</div></div>)}</div>}
+        {ivDist.length>0&&<div className="c">
+          <h3>Dağılım</h3>
+          <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap",marginBottom:8}}>
+            <DonutChart data={ivDist.slice(0,6).map((e,i)=>({n:e.n,v:e.v,c:PC[i%PC.length]}))} size={120}/>
+            <div style={{flex:1,minWidth:130}}>
+              {ivDist.map((e,i)=><div key={i} className="br"><div className="bl">{e.n}</div><div className="bk"><div style={{height:"100%",borderRadius:3,width:`${e.v/Math.max(...ivDist.map(x=>x.v))*100}%`,background:PC[i%PC.length]}}/></div><div className="bv m">{fmt(e.v)}</div></div>)}
+            </div>
+          </div>
+        </div>}
         <div className="ch"><div className="sc">Portföy</div><button className="bt ba bs" onClick={()=>setMod("iv")}>+ Ekle</button></div>
         {inv.length===0?<div className="c em">Yatırım yok</div>:inv.map(i=>{const t=INV.find(x=>x.id===i.type);const c=t?.c||"TRY";const v=i.amt*i.cp;const co=i.amt*i.bp;const p=v-co;const pp=co>0?(p/co*100):0;
           return<div key={i.id} className="c" style={{padding:10,marginBottom:6}}>
@@ -503,7 +746,7 @@ JSON formatı:
           </div>})}
       </div>}
 
-      {/* GOALS */}
+      {/* ── HEDEFLER ── */}
       {tab==="gl"&&<div>
         <div className="ch"><div className="sc">Hedefler</div><button className="bt ba bs" onClick={()=>setMod("gl")}>+ Yeni</button></div>
         {gls.length===0?<div className="c em">Hedef yok</div>:gls.map(g=>{const p=g.tgt>0?Math.min(100,g.cur/g.tgt*100):0;
@@ -514,11 +757,9 @@ JSON formatı:
           </div>})}
       </div>}
 
-      {/* REMINDERS */}
+      {/* ── HATIRLATMALAR ── */}
       {tab==="rm"&&<div>
-        <div className="ch"><div className="sc">🔔 Hatırlatmalar</div><div style={{display:"flex",gap:4}}><button className="bt ba bs" onClick={()=>setMod("rm")}>+ Hatırlatma</button></div></div>
-
-        {/* Ekstre-based payments */}
+        <div className="ch"><div className="sc">🔔 Hatırlatmalar</div><div style={{display:"flex",gap:4}}><button className="bt ba bs" onClick={()=>setMod("rm")}>+ Ekle</button></div></div>
         {extPay.length>0&&<div style={{marginBottom:14}}>
           <div style={{fontSize:12,fontWeight:600,color:"var(--td)",marginBottom:6}}>📄 Ekstre Ödemeleri</div>
           {extPay.map(e=><div key={e.id} className="rem" style={{background:e.dl<=3?"linear-gradient(135deg,var(--dgd),#1a0000)":"linear-gradient(135deg,var(--wnd),#1a1500)",borderColor:e.dl<=3?"var(--dg)":"var(--wn)"}}>
@@ -527,21 +768,13 @@ JSON formatı:
             <button className="db" style={{fontSize:10,color:"var(--ac)"}} onClick={()=>setExtSums(p=>p.map(x=>x.id===e.id?{...x,paid:true}:x))}>✅</button>
           </div>)}
         </div>}
-
-        {/* All reminders (single + recurring generated) */}
         {allReminders.map(r=><div key={r.id} className="rem"><div className="dy" style={{background:r.dl<=0?"var(--dg)":r.dl<=3?"var(--wn)":"var(--in)",color:r.dl<=3?"#000":"#fff"}}>{r.dl<0?"!":r.dl}<small>gün</small></div><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{r.title}{r.repeat&&r.repeat!=="none"&&<span className="tg2" style={{background:"var(--prd)",color:"var(--pr)"}}>{r.repeat==="weekly"?"Haftalık":r.repeat==="monthly"?"Aylık":"Yıllık"}</span>}</div><div style={{fontSize:9,color:"var(--td)"}}>{r.amt>0&&fmt(r.amt)+" · "}{new Date(r.date).toLocaleDateString("tr-TR")}{r.note&&" · "+r.note}</div></div>{!r.isGenerated&&<button className="db" onClick={()=>setRem(p=>p.filter(x=>x.id!==r.id))}>🗑</button>}{r.isGenerated&&<button className="db" onClick={()=>setRem(p=>p.filter(x=>x.id!==r.parentId))}>🗑</button>}</div>)}
-
-        {/* Recurring Expenses */}
         <div style={{marginTop:16}}>
           <div className="ch"><div style={{fontSize:13,fontWeight:700}}>🔄 Tekrarlayan Giderler</div><button className="bt bw bs" onClick={()=>setMod("recE")}>+ Ekle</button></div>
-          {recExp.length===0?<div className="c em">Henüz tekrarlayan gider yok. Kira, aidat, abonelik gibi her ay sabit ödediğiniz giderleri ekleyin.</div>:
-          recExp.map(r=>{const cat=CATS.exp.find(c=>c.id===r.cat);const thisMonth=`${cY}-${String(cM+1).padStart(2,"0")}`;const logged=(recLog[thisMonth]||[]).includes(r.id);
+          {recExp.length===0?<div className="c em">Henüz tekrarlayan gider yok.</div>:recExp.map(r=>{const cat=CATS.exp.find(c=>c.id===r.cat);const thisMonth=`${cY}-${String(cM+1).padStart(2,"0")}`;const logged=(recLog[thisMonth]||[]).includes(r.id);
             return<div key={r.id} className="c" style={{padding:10,marginBottom:6,borderLeft:`3px solid ${r.active!==false?"var(--wn)":"var(--tm)"}`}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div>
-                  <div style={{fontSize:13,fontWeight:600}}>{cat?.i} {r.name}</div>
-                  <div style={{fontSize:10,color:"var(--td)"}}>Her ayın {r.day}. günü · {cat?.l||r.cat}</div>
-                </div>
+                <div><div style={{fontSize:13,fontWeight:600}}>{cat?.i} {r.name}</div><div style={{fontSize:10,color:"var(--td)"}}>Her ayın {r.day}. günü · {cat?.l||r.cat}</div></div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div className="m" style={{fontSize:15,color:"var(--wn)"}}>{fmt(r.amt)}</div>
                   {logged&&<span className="tg2" style={{background:"var(--acd)",color:"var(--ac)"}}>✅ Bu ay</span>}
@@ -551,75 +784,156 @@ JSON formatı:
               </div>
             </div>})}
         </div>
-
-        {upco.length>0&&<div style={{marginTop:14}}><div style={{fontSize:12,fontWeight:600,color:"var(--td)",marginBottom:6}}>📅 Kart Ödemeleri</div>{upco.map(c=><div key={c.id} className="rem"><div className="dy" style={{background:c.dl<=3?"var(--dg)":"var(--cd)"}}>{c.dl}<small>gün</small></div><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>💳 {c.n}</div><div style={{fontSize:9,color:"var(--td)"}}>{fmt(c.sp)}</div></div></div>)}</div>}
-        {inv.filter(i=>i.type==="deposit"&&i.md).length>0&&<div style={{marginTop:14}}><div style={{fontSize:12,fontWeight:600,color:"var(--td)",marginBottom:6}}>🔒 Mevduat Vadeleri</div>{inv.filter(i=>i.type==="deposit"&&i.md).map(i=>{const d=Math.ceil((new Date(i.md)-now)/864e5);return<div key={i.id} className="rem"><div className="dy" style={{background:d<=0?"var(--dg)":d<=7?"var(--wn)":"var(--ac)"}}>{d<0?"!":d}<small>gün</small></div><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600}}>{i.name}</div><div style={{fontSize:9,color:"var(--td)"}}>{fmt(i.amt*i.cp)} · %{i.ir}</div></div></div>})}</div>}
       </div>}
 
-      {/* REPORT */}
+      {/* ── AI KOÇ ── */}
+      {tab==="coach"&&<div>
+        <div className="ch">
+          <div className="sc" style={{marginBottom:0}}>🤖 AI Finansal Koç</div>
+        </div>
+
+        {!apiKey&&<div className="ald al" style={{marginBottom:12}}>⚠️ API anahtarı gerekli. <span style={{textDecoration:"underline",cursor:"pointer",color:"var(--in)"}} onClick={()=>setTab("set")}>Ayarlar</span></div>}
+
+        <button
+          onClick={runCoach}
+          disabled={coachLoading||!apiKey}
+          style={{width:"100%",padding:"14px",borderRadius:12,border:"1px solid var(--in)",background:coachLoading?"var(--cd)":"linear-gradient(135deg,#0c1a2e,#1e3a5f)",color:"#fff",fontSize:14,fontWeight:700,cursor:coachLoading?"wait":"pointer",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
+        >
+          {coachLoading?<>⏳ Analiz yapılıyor...</>:<>🔍 Finansal Durumu Analiz Et</>}
+        </button>
+
+        {coachLoading&&<div style={{textAlign:"center",padding:20}}>
+          <div style={{fontSize:12,color:"var(--td)",lineHeight:2}}>
+            Harcama alışkanlıkları analiz ediliyor...<br/>
+            Portföy dengesi değerlendiriliyor...<br/>
+            Tasarruf fırsatları hesaplanıyor...
+          </div>
+        </div>}
+
+        {coachResult&&!coachResult.error&&<div>
+          {/* Score */}
+          <div className="coach-card" style={{textAlign:"center",marginBottom:12}}>
+            <div style={{fontSize:10,color:"var(--td)",marginBottom:8,textTransform:"uppercase",letterSpacing:".5px"}}>Finansal Sağlık Skoru</div>
+            <div className="m" style={{fontSize:52,color:scoreColor(coachResult.score),lineHeight:1}}>{coachResult.score}</div>
+            <div style={{fontSize:11,color:"var(--td)",marginTop:6}}>/100</div>
+            <div style={{fontSize:13,color:"var(--tx)",marginTop:10,fontStyle:"italic"}}>"{coachResult.score_comment}"</div>
+            <div style={{fontSize:9,color:"var(--td)",marginTop:8}}>{coachResult.ts}</div>
+          </div>
+
+          {/* Güçlü yönler */}
+          <div className="coach-card">
+            <div className="coach-section">
+              <div className="coach-section-title" style={{color:"var(--ac)"}}>✅ Güçlü Yönler</div>
+              {coachResult.strengths?.map((s,i)=><div key={i} className="coach-item"><div className="coach-dot" style={{background:"var(--ac)"}}/>{s}</div>)}
+            </div>
+            <div className="coach-section">
+              <div className="coach-section-title" style={{color:"var(--dg)"}}>⚠️ Riskler & Sorunlar</div>
+              {coachResult.risks?.map((r,i)=><div key={i} className="coach-item"><div className="coach-dot" style={{background:"var(--dg)"}}/>{r}</div>)}
+            </div>
+          </div>
+
+          {/* Harcama analizi */}
+          <div className="coach-card">
+            <div className="coach-section">
+              <div className="coach-section-title" style={{color:"var(--wn)"}}>💸 Harcama Analizi</div>
+              <div style={{fontSize:12,color:"var(--tx)",lineHeight:1.6}}>{coachResult.spending_insight}</div>
+            </div>
+            <div className="coach-section">
+              <div className="coach-section-title" style={{color:"var(--ac)"}}>💰 Bu Ay Tasarruf Hamlesi</div>
+              <div style={{fontSize:13,color:"var(--ac)",fontWeight:600,lineHeight:1.6}}>{coachResult.savings_action}</div>
+            </div>
+          </div>
+
+          {/* Yatırım */}
+          <div className="coach-card">
+            <div className="coach-section">
+              <div className="coach-section-title" style={{color:"var(--pr)"}}>📈 Yatırım Değerlendirmesi</div>
+              <div style={{fontSize:12,color:"var(--tx)",lineHeight:1.6}}>{coachResult.investment_insight}</div>
+            </div>
+            <div className="coach-section">
+              <div className="coach-section-title" style={{color:"var(--cy)"}}>🔮 Gelecek Ay Tahmini</div>
+              <div style={{fontSize:12,color:"var(--tx)",lineHeight:1.6}}>{coachResult.next_month_forecast}</div>
+            </div>
+          </div>
+
+          {/* Eylem planı */}
+          <div className="coach-card">
+            <div className="coach-section-title" style={{color:"var(--in)"}}>🎯 Bu Hafta Yapılacaklar</div>
+            {coachResult.top_actions?.map((a,i)=><div key={i} className="coach-item">
+              <div style={{width:20,height:20,borderRadius:4,background:"var(--ind)",border:"1px solid var(--in)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:"var(--in)",fontWeight:700,flexShrink:0}}>{i+1}</div>
+              {a}
+            </div>)}
+          </div>
+        </div>}
+
+        {coachResult?.error&&<div className="ald al">❌ Hata: {coachResult.error}</div>}
+
+        {!coachResult&&!coachLoading&&<div className="c" style={{marginTop:8}}>
+          <h3>ℹ️ Nasıl Çalışır?</h3>
+          <div style={{fontSize:11,color:"var(--td)",lineHeight:1.8}}>
+            Tüm finansal verinizi analiz eder:<br/>
+            • Gelir/gider trendi<br/>
+            • Bütçe uyumu<br/>
+            • Portföy dengesi<br/>
+            • Hedef ilerleme<br/>
+            • Yaklaşan ödemeler<br/><br/>
+            Ve size özgü, somut öneriler sunar.
+          </div>
+        </div>}
+      </div>}
+
+      {/* ── RAPOR ── */}
       {tab==="rp"&&<div>
         <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:12}}><div className="sc" style={{marginBottom:0}}>Rapor</div>
           <select value={rM} onChange={e=>setRM(+e.target.value)} style={{padding:"4px 6px",background:"var(--cd)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--tx)",fontSize:10}}>{MF.map((m,i)=><option key={i} value={i}>{m}</option>)}</select>
           <select value={rY} onChange={e=>setRY(+e.target.value)} style={{padding:"4px 6px",background:"var(--cd)",border:"1px solid var(--bd)",borderRadius:5,color:"var(--tx)",fontSize:10}}>{[2024,2025,2026,2027].map(y=><option key={y} value={y}>{y}</option>)}</select>
         </div>
-        {(()=>{const ri=rTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);const re=rTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);return<div>
-          <div className="ss" style={{gridTemplateColumns:"repeat(3,1fr)"}}><div className="s"><label>Gelir</label><div className="v m" style={{color:"var(--ac)",fontSize:14}}>{fmt(ri)}</div></div><div className="s"><label>Gider</label><div className="v m" style={{color:"var(--dg)",fontSize:14}}>{fmt(re)}</div></div><div className="s"><label>Net</label><div className="v m" style={{color:ri>=re?"var(--ac)":"var(--dg)",fontSize:14}}>{fmt(ri-re)}</div></div></div>
-          <div className="c"><h3>Kategoriler</h3>{rEC.length===0?<div className="em">Veri yok</div>:rEC.map((e,i)=><div key={i} className="br"><div className="bl">{e.n}</div><div className="bk"><div style={{height:"100%",borderRadius:3,width:`${e.v/rMx*100}%`,background:PC[i%PC.length]}}/></div><div className="bv m">{fmt(e.v)}</div></div>)}</div>
-        </div>})()}
+        {(()=>{const ri=rTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);const re=rTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+          const rDonut=rEC.slice(0,6).map((e,i)=>({n:e.n,v:e.v,c:PC[i%PC.length]}));
+          return<div>
+            <div className="ss" style={{gridTemplateColumns:"repeat(3,1fr)"}}><div className="s"><label>Gelir</label><div className="v m" style={{color:"var(--ac)",fontSize:14}}>{fmt(ri)}</div></div><div className="s"><label>Gider</label><div className="v m" style={{color:"var(--dg)",fontSize:14}}>{fmt(re)}</div></div><div className="s"><label>Net</label><div className="v m" style={{color:ri>=re?"var(--ac)":"var(--dg)",fontSize:14}}>{fmt(ri-re)}</div></div></div>
+            {rEC.length>0&&<div className="c">
+              <h3>Gider Dağılımı</h3>
+              <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap",marginBottom:8}}>
+                <DonutChart data={rDonut}/>
+                <div style={{flex:1,minWidth:140}}>{rEC.map((e,i)=><div key={i} className="br"><div className="bl">{e.n}</div><div className="bk"><div style={{height:"100%",borderRadius:3,width:`${e.v/rMx*100}%`,background:PC[i%PC.length]}}/></div><div className="bv m">{fmt(e.v)}</div></div>)}</div>
+              </div>
+            </div>}
+          </div>})()}
       </div>}
 
-      {/* SETTINGS */}
+      {/* ── AYARLAR ── */}
       {tab==="set"&&<div>
         <div className="sc">⚙️ Ayarlar</div>
-
         <div className="c">
           <h3>🔑 Anthropic API Anahtarı</h3>
-          <div style={{fontSize:11,color:"var(--td)",marginBottom:10,lineHeight:1.6}}>
-            Fiş tarama ve fiyat güncelleme özellikleri için gereklidir. API anahtarınız sadece telefonunuzun localStorage'ında saklanır, başka hiçbir yere gönderilmez.
-          </div>
-          <div style={{fontSize:11,color:"var(--td)",marginBottom:10,lineHeight:1.6}}>
-            Anahtarınızı almak için: <b style={{color:"var(--tx)"}}>console.anthropic.com</b> → API Keys → Create Key
-          </div>
+          <div style={{fontSize:11,color:"var(--td)",marginBottom:10,lineHeight:1.6}}>Fiş tarama, fiyat güncelleme ve AI Koç için gereklidir. Sadece localStorage'da saklanır.</div>
           <F label="API Anahtarı"><input type="password" placeholder="sk-ant-..." value={apiKey} onChange={e=>setApiKey(e.target.value)} style={{fontFamily:"monospace",fontSize:12}}/></F>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {apiKey?<div style={{fontSize:12,color:"var(--ac)",fontWeight:700}}>✅ Anahtar kaydedildi ({apiKey.substring(0,12)}...)</div>:<div style={{fontSize:12,color:"var(--wn)"}}>⚠️ Anahtar girilmedi</div>}
-            {apiKey&&<button className="bt bd bs" onClick={()=>setApiKey("")}>Sil</button>}
+            {apiKey?<div style={{fontSize:12,color:"var(--ac)",fontWeight:700}}>✅ Kaydedildi ({apiKey.substring(0,12)}...)</div>:<div style={{fontSize:12,color:"var(--wn)"}}>⚠️ Girilmedi</div>}
+            {apiKey&&<button className="bt bd2 bs" onClick={()=>setApiKey("")}>Sil</button>}
           </div>
         </div>
-
         <div className="c">
           <h3>💱 Döviz Kurları</h3>
-          <div style={{fontSize:11,color:"var(--td)",marginBottom:10}}>Yatırım değerlerinin TRY karşılığını hesaplamak için kullanılır.</div>
           {["USD","EUR","GBP"].map(c=><div key={c} style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
             <span style={{fontSize:12,fontWeight:600,width:40}}>{c}</span>
             <input className="ii" style={{width:90,fontSize:13}} type="number" inputMode="decimal" value={rates[c]||""} onChange={e=>setRates(p=>({...p,[c]:parseFloat(e.target.value)||p[c]}))}/>
             <span style={{fontSize:11,color:"var(--td)"}}>TRY</span>
           </div>)}
         </div>
-
         <div className="c">
           <h3>🗑️ Veri Yönetimi</h3>
-          <div style={{fontSize:11,color:"var(--td)",marginBottom:10}}>Tüm verileriniz telefonunuzdaki localStorage'da saklanır.</div>
-          <button className="bt bd bs" onClick={()=>{if(confirm("Tüm verileri silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")){Object.keys(localStorage).filter(k=>k.startsWith("p3_")).forEach(k=>localStorage.removeItem(k));location.reload()}}}>Tüm Verileri Sil</button>
-        </div>
-
-        <div className="c">
-          <h3>ℹ️ Gizlilik</h3>
-          <div style={{fontSize:11,color:"var(--td)",lineHeight:1.7}}>
-            • Tüm finansal veriler sadece telefonunuzda saklanır<br/>
-            • Ekstre PDF'leri tarayıcınızda işlenir, sunucuya gitmez<br/>
-            • Fiş tarama: fotoğraf Anthropic API'ye gönderilir, işlendikten sonra saklanmaz<br/>
-            • Fiyat güncelleme: sadece yatırım isimleri gönderilir<br/>
-            • API anahtarınız sadece localStorage'da tutulur
-          </div>
+          <button className="bt bd2 bs" onClick={()=>{if(confirm("Tüm verileri silmek istediğinize emin misiniz?")){Object.keys(localStorage).filter(k=>k.startsWith("p3_")||k.startsWith("p4_")).forEach(k=>localStorage.removeItem(k));location.reload()}}}>Tüm Verileri Sil</button>
         </div>
       </div>}
 
-      {/* TIPS */}
+      {/* ── BİLGİ ── */}
       {tab==="tp"&&<div><div className="sc">Finansal Bilgi</div>{TIPS.map((t,i)=><div key={i} className="c" style={{marginBottom:6}}><div style={{display:"inline-block",padding:"2px 6px",borderRadius:4,fontSize:8,fontWeight:700,background:t.c==="b"?"var(--acd)":t.c==="t"?"var(--ind)":"var(--prd)",color:t.c==="b"?"var(--ac)":t.c==="t"?"var(--in)":"var(--pr)"}}>{t.c==="b"?"BÜTÇE":t.c==="t"?"TASARRUF":"YATIRIM"}</div><div style={{fontSize:13,fontWeight:700,marginTop:4}}>{t.t}</div><div style={{fontSize:11,color:"var(--td)",lineHeight:1.5,marginTop:2}}>{t.d}</div></div>)}</div>}
+
     </div>
 
-    {/* MODALS */}
+    {/* ── MODALS ── */}
     <Mod show={mod==="tx"} onClose={()=>setMod(null)} title="Yeni İşlem">
       <div className="tg"><button className={tf.type==="expense"?"ae":""} onClick={()=>setTf(f=>({...f,type:"expense",cat:"food"}))}>💸 Gider</button><button className={tf.type==="income"?"ai":""} onClick={()=>setTf(f=>({...f,type:"income",cat:"salary"}))}>💰 Gelir</button></div>
       <F label="Kategori"><select value={tf.cat} onChange={e=>setTf(f=>({...f,cat:e.target.value}))}>{(tf.type==="income"?CATS.inc:CATS.exp).map(c=><option key={c.id} value={c.id}>{c.i} {c.l}</option>)}</select></F>
@@ -645,7 +959,7 @@ JSON formatı:
       <div style={{fontSize:11,color:"var(--td)",marginBottom:10}}>Bakiye: <b style={{color:"var(--ac)"}}>{fmt(ppf.bal)}</b></div>
       <F label="Tutar"><input type="number" inputMode="decimal" value={pa} onChange={e=>setPa(e.target.value)}/></F>
       <F label="Not"><input value={pn} onChange={e=>setPn(e.target.value)}/></F>
-      <button className="bt bd bf" onClick={pWit}>Çek</button>
+      <button className="bt bd2 bf" onClick={pWit}>Çek</button>
     </Mod>
     <Mod show={mod==="pr"} onClose={()=>setMod(null)} title="PPF Oranı">
       <F label="Yıllık %"><input type="number" inputMode="decimal" value={prf} onChange={e=>setPrf(e.target.value)}/></F>
@@ -678,32 +992,36 @@ JSON formatı:
     <Mod show={mod==="rm"} onClose={()=>setMod(null)} title="🔔 Hatırlatma">
       <F label="Başlık"><input placeholder="ör: Kira ödemesi" value={rf.title} onChange={e=>setRf(f=>({...f,title:e.target.value}))}/></F>
       <F label="Tarih"><input type="date" value={rf.date} onChange={e=>setRf(f=>({...f,date:e.target.value}))}/></F>
-      <F label="Tekrar"><select value={rf.repeat||"none"} onChange={e=>setRf(f=>({...f,repeat:e.target.value}))}>
-        <option value="none">Tekrar etmesin</option>
-        <option value="weekly">Haftalık</option>
-        <option value="monthly">Aylık</option>
-        <option value="yearly">Yıllık</option>
-      </select></F>
+      <F label="Tekrar"><select value={rf.repeat||"none"} onChange={e=>setRf(f=>({...f,repeat:e.target.value}))}><option value="none">Tekrar etmesin</option><option value="weekly">Haftalık</option><option value="monthly">Aylık</option><option value="yearly">Yıllık</option></select></F>
       <F label="Tutar (ops.)"><input type="number" inputMode="decimal" value={rf.amt} onChange={e=>setRf(f=>({...f,amt:e.target.value}))}/></F>
       <F label="Not"><input value={rf.note} onChange={e=>setRf(f=>({...f,note:e.target.value}))}/></F>
       <button className="bt ba bf" onClick={addRm}>Kaydet</button>
     </Mod>
     <Mod show={mod==="recE"} onClose={()=>setMod(null)} title="🔄 Tekrarlayan Gider">
-      <div style={{fontSize:11,color:"var(--td)",marginBottom:12}}>Her ay otomatik gider olarak kaydedilir.</div>
-      <F label="Gider Adı"><input placeholder="ör: Kira, Aidat, Doğalgaz" value={recF.name} onChange={e=>setRecF(f=>({...f,name:e.target.value}))}/></F>
-      <F label="Aylık Tutar (₺)"><input type="number" inputMode="decimal" placeholder="0" value={recF.amt} onChange={e=>setRecF(f=>({...f,amt:e.target.value}))}/></F>
+      <F label="Gider Adı"><input placeholder="ör: Kira, Aidat" value={recF.name} onChange={e=>setRecF(f=>({...f,name:e.target.value}))}/></F>
+      <F label="Aylık Tutar (₺)"><input type="number" inputMode="decimal" value={recF.amt} onChange={e=>setRecF(f=>({...f,amt:e.target.value}))}/></F>
       <F label="Kategori"><select value={recF.cat} onChange={e=>setRecF(f=>({...f,cat:e.target.value}))}>{CATS.exp.map(c=><option key={c.id} value={c.id}>{c.i} {c.l}</option>)}</select></F>
-      <F label="Ayın Kaçında?"><input type="number" inputMode="numeric" placeholder="1" min="1" max="28" value={recF.day} onChange={e=>setRecF(f=>({...f,day:e.target.value}))}/></F>
+      <F label="Ayın Kaçında?"><input type="number" inputMode="numeric" min="1" max="28" value={recF.day} onChange={e=>setRecF(f=>({...f,day:e.target.value}))}/></F>
       <button className="bt bw bf" onClick={addRecE}>Kaydet</button>
     </Mod>
     <Mod show={mod==="rt"} onClose={()=>setMod(null)} title="💱 Döviz Kurları">
-      <div style={{fontSize:10,color:"var(--td)",marginBottom:10}}>Manuel girin. TRY'ye çevrimde kullanılır.</div>
       {["USD","EUR","GBP"].map(c=><F key={c} label={`1 ${c} = ? TRY`}><input type="number" inputMode="decimal" value={rtf[c]||""} onChange={e=>setRtf(f=>({...f,[c]:e.target.value}))}/></F>)}
       <button className="bt ba bf" onClick={()=>{const r={};["USD","EUR","GBP"].forEach(c=>r[c]=parseFloat(rtf[c])||rates[c]);setRates(r);setMod(null)}}>Kaydet</button>
     </Mod>
     <Mod show={mod==="bg"} onClose={()=>setMod(null)} title="Bütçe Limitleri">
       {CATS.exp.map(c=><F key={c.id} label={`${c.i} ${c.l}`}><input type="number" inputMode="decimal" placeholder="₺" value={bf[c.id]||""} onChange={e=>setBf2(f=>({...f,[c.id]:e.target.value}))}/></F>)}
       <button className="bt ba bf" onClick={saveBg}>Kaydet</button>
+    </Mod>
+    <Mod show={mod==="plan"} onClose={()=>setMod(null)} title="📋 Plan Ekle">
+      <div style={{fontSize:11,color:"var(--td)",marginBottom:12}}>Bu aya ait planlanan harcamayı girin.</div>
+      <F label="Kategori"><select value={plf.cat} onChange={e=>setPlf(f=>({...f,cat:e.target.value}))}>{CATS.exp.map(c=><option key={c.id} value={c.id}>{c.i} {c.l}</option>)}</select></F>
+      <F label="Açıklama (ops.)"><input placeholder="ör: Tatil uçak bileti" value={plf.desc} onChange={e=>setPlf(f=>({...f,desc:e.target.value}))}/></F>
+      <F label="Planlanan Tutar (₺)"><input type="number" inputMode="decimal" value={plf.amt} onChange={e=>setPlf(f=>({...f,amt:e.target.value}))}/></F>
+      <div style={{display:"flex",gap:6}}>
+        <div style={{flex:1}}><F label="Ay"><select value={plf.month} onChange={e=>setPlf(f=>({...f,month:parseInt(e.target.value)}))}>{MF.map((m,i)=><option key={i} value={i}>{m}</option>)}</select></F></div>
+        <div style={{width:80}}><F label="Yıl"><select value={plf.year} onChange={e=>setPlf(f=>({...f,year:parseInt(e.target.value)}))}>{[2024,2025,2026,2027].map(y=><option key={y} value={y}>{y}</option>)}</select></F></div>
+      </div>
+      <button className="bt ba bf" onClick={addPlan}>Kaydet</button>
     </Mod>
   </div>);
 }
